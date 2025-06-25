@@ -1,0 +1,7 @@
+# Ignore everything
+*
+
+# Allow only these files
+!app.py
+!requirements.txt
+!.gitignore
