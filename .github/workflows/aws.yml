@@ -1,0 +1,38 @@
+name: Deploy API to EC2
+
+on:
+  push:
+    paths:
+      - app.py
+      - requirements.txt
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up SSH access
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_KEY }}
+          script_stop: true
+          script: |
+            cd app
+            source venv/bin/activate
+            git pull origin main
+            CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD)
+
+            if echo "$CHANGED_FILES" | grep -q 'requirements.txt'; then
+              echo "requirements.txt changed — reinstalling dependencies"
+              pip install -r requirements.txt
+            fi
+
+            if echo "$CHANGED_FILES" | grep -q 'app.py'; then
+              echo "app.py changed — restarting nginx"
+              sudo systemctl restart nginx
+            fi
